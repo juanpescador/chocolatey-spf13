@@ -10,21 +10,33 @@ Describe 'SymLink Functions' {
 
     Context 'Test-ReparsePoint' {
         It 'returns false when path is a file' {
-            Test-ReparsePoint($FilePath) | Should Be $false
+            Test-ReparsePoint $FilePath | Should Be $false
         }
 
         It 'returns true when path is a symlink' {
-            Test-ReparsePoint($RemovableSymLinkPath) | Should Be $true
+            Test-ReparsePoint $SafeToRemoveSymLinkPath | Should Be $true
         }
 
         It 'returns false when path does not exist' {
-            Test-ReparsePoint("$TestDrive\NonExistentPath") | Should Be $false
+            Test-ReparsePoint "$TestDrive\NonExistentPath" | Should Be $false
         }
     }
 
     Context 'Test-SymLinkTargetsSpf13Directory' {
         It 'returns true when symlink target is inside spf13-vim-3 directory' {
-            Test-SymLinkTargetsSpf13Directory $RemovableSymLinkPath | Should Be $true
+            Test-SymLinkTargetsSpf13Directory $SafeToRemoveSymLinkPath | Should Be $true
+        }
+
+        It 'returns false when symlink target is not inside user directory''s .spf13-vim-3 subdirectory' {
+            Test-SymLinkTargetsSpf13Directory $DangerousToRemoveSymLinkPath | Should Be $false
+        }
+
+        It 'returns false when symlink is a file' {
+            Test-SymLinkTargetsSpf13Directory $FilePath | Should Be $false
+        }
+
+        It 'returns false when symlink does not exist' {
+            Test-SymLinkTargetsSpf13Directory "$TestDrive\NonExistentPath"
         }
     }
 
@@ -38,17 +50,20 @@ Describe 'SymLink Functions' {
         }
 
         $FilePath = Setup -Passthru -File '.vimrc' 'set nocompatible'
-        $RemovableSymLinkPath = "$TestDrive\symlink"
-        $RemovableSymLinkTarget = Setup -Passthru -File ".spf13-vim-3\symlinktarget.txt" 'not spf13-vim'
 
-        # Create a symlink that is visible to cmd.exe in the current
-        # directory. $TestDrive isn't accessible from cmd.exe, needed for
-        # dealing with symlinks.
-        cmd /c mklink $RemovableSymLinkPath $RemovableSymLinkTarget
+        $SafeToRemoveSymLinkPath = "$TestDrive\symlink"
+        $SafeToRemoveSymLinkTarget = Setup -Passthru -File ".spf13-vim-3\symlinktarget.txt" 'not spf13-vim'
+
+        $DangerousToRemoveSymLinkPath = "$TestDrive\unsafe-to-remove-symlink"
+        $DangerousToRemoveSymLinkTarget = "$TestDrive\non-spf13-vim-3-target"
+
+        cmd /c mklink $SafeToRemoveSymLinkPath $SafeToRemoveSymLinkTarget
+        cmd /c mklink $DangerousToRemoveSymLinkPath $DangerousToRemoveSymLinkTarget
     }
 
     AfterEach {
-        # Clean up the symlink we created.
-        cmd /c del $RemovableSymLinkPath
+        # Clean up the symlinks.
+        cmd /c del $SafeToRemoveSymLinkPath
+        cmd /c del $DangerousToRemoveSymLinkPath
     }
 }
