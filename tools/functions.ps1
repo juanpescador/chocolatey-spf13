@@ -14,7 +14,7 @@ function Test-SymLinkTargetsSpf13Directory([string]$Path)
     # For example, a .vimrc symlink that still points to the .spf13-vim
     # directory looks like the following:
     # 10/04/2015  18:39    <SYMLINK>      .vimrc [C:\Users\john\.spf13-vim-3\.vimrc]
-    return (cmd /c dir $Path `
+    return (cmd /c dir $Path 2> $null `
                 | Select-String -Pattern "\[$([regex]::Escape($HOME))\\\.spf13\-vim\-3.+\]$" `
                 | Measure `
                 | select -ExpandProperty Count) `
