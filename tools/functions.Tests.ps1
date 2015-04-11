@@ -2,17 +2,30 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests', '')
 . "$here\$sut"
 
-Describe 'Test-ReparsePoint' {
-    It 'returns false when path is a file' {
-        Test-ReparsePoint($FilePath) | Should Be $false
+Describe 'SymLink Functions' {
+    # Need to redefine $HOME global variable. Test-SymLinkTargetsSpf13Directory
+    # uses it. http://superuser.com/a/82092/
+    Remove-Variable -Name HOME -Scope Global -Force
+    Set-Variable -Name HOME "$TestDrive"
+
+    Context 'Test-ReparsePoint' {
+        It 'returns false when path is a file' {
+            Test-ReparsePoint($FilePath) | Should Be $false
+        }
+
+        It 'returns true when path is a symlink' {
+            Test-ReparsePoint($RemovableSymLinkPath) | Should Be $true
+        }
+
+        It 'returns false when path does not exist' {
+            Test-ReparsePoint("$TestDrive\NonExistentPath") | Should Be $false
+        }
     }
 
-    It 'returns true when path is a symlink' {
-        Test-ReparsePoint($RemovableSymLinkPath) | Should Be $true
-    }
-
-    It 'returns false when path does not exist' {
-        Test-ReparsePoint("$TestDrive\NonExistantPath") | Should Be $false
+    Context 'Test-SymLinkTargetsSpf13Directory' {
+        It 'returns true when symlink target is inside spf13-vim-3 directory' {
+            Test-SymLinkTargetsSpf13Directory $RemovableSymLinkPath | Should Be $true
+        }
     }
 
     BeforeEach {
